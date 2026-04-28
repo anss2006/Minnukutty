@@ -263,7 +263,7 @@ section {
   font-size: clamp(130px, 26vw, 240px);
   font-weight: 300;
   color: transparent;
-  -webkit-text-stroke: 1px rgba(217, 167, 199, 0.09);
+  -webkit-text-stroke: 2px rgba(217, 167, 199, 0.22);
   position: absolute;
   top: 50%;
   left: 50%;
@@ -309,6 +309,7 @@ section {
   color: var(--text);
   letter-spacing: -0.025em;
   margin-bottom: 28px;
+  font-feature-settings: "liga" 0, "calt" 0;
 }
 
 .hero-name em {
@@ -366,7 +367,7 @@ section {
    ══════════════════════════════════════ */
 #about {
   padding: 130px 24px;
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .about-inner {
@@ -855,26 +856,38 @@ footer {
     border-radius: 20px;
   }
 
-  /* Polaroids stack vertically on mobile */
+  /* Polaroids — horizontal row on mobile with scroll */
   .polaroid-trio {
-    flex-direction: column;
-    align-items: center;
-    gap: 24px;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: flex-start;
+    gap: 12px;
     margin-top: 40px;
+    overflow-x: auto;
+    padding: 16px 20px 48px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
 
+  .polaroid-trio::-webkit-scrollbar { display: none; }
+
   .polaroid-left,
-  .polaroid-center,
   .polaroid-right {
-    width: 200px;
+    width: 130px;
+    flex-shrink: 0;
+  }
+
+  .polaroid-center {
+    width: 150px;
+    flex-shrink: 0;
   }
 
   .polaroid-left  { transform: rotate(-6deg); }
-  .polaroid-center { transform: none; width: 220px; }
+  .polaroid-center { transform: translateY(-12px); }
   .polaroid-right { transform: rotate(6deg); }
 
   .polaroid-left:hover  { transform: rotate(-2deg) translateY(-10px); }
-  .polaroid-center:hover { transform: translateY(-10px); }
+  .polaroid-center:hover { transform: translateY(-22px); }
   .polaroid-right:hover { transform: rotate(2deg) translateY(-10px); }
 
   /* Bento single column on mobile */
@@ -904,8 +917,12 @@ footer {
 }
 
 @media (max-width: 380px) {
-  .polaroid,
+  .polaroid-left,
+  .polaroid-right {
+    width: 110px;
+  }
+
   .polaroid-center {
-    width: 175px;
+    width: 128px;
   }
 }
