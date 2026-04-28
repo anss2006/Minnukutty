@@ -1,15 +1,62 @@
 /* ═══════════════════════════════════════════
    main.js — Soft Glow Birthday Site
-   Handles: scroll reveal, sparkles,
-            music toggle, surprise overlay
+   Handles: config injection, scroll reveal,
+            sparkles, music toggle,
+            surprise overlay
    ═══════════════════════════════════════════ */
 
 (function () {
   "use strict";
 
   /* ──────────────────────────────────────
-     1. SCROLL REVEAL
-     IntersectionObserver — fade + lift
+     1. CONFIG INJECTION
+     Runs first so all dynamic elements
+     exist before IntersectionObserver runs
+  ────────────────────────────────────── */
+  if (typeof SITE_CONFIG !== "undefined") {
+
+    /* — About You lines — */
+    var aboutList = document.querySelector(".about-lines");
+    if (aboutList && SITE_CONFIG.aboutLines) {
+      aboutList.innerHTML = "";
+      SITE_CONFIG.aboutLines.forEach(function (line) {
+        var li = document.createElement("li");
+        li.textContent = line;
+        aboutList.appendChild(li);
+      });
+    }
+
+    /* — Bento reasons cards — */
+    var bentoGrid = document.querySelector(".bento-grid");
+    if (bentoGrid && SITE_CONFIG.reasons) {
+      bentoGrid.innerHTML = "";
+      SITE_CONFIG.reasons.forEach(function (item) {
+        var card = document.createElement("div");
+        card.className = "bento-card reveal";
+        var icon = document.createElement("span");
+        icon.className = "bento-icon";
+        icon.textContent = item.icon;
+        var text = document.createElement("p");
+        text.className = "bento-text";
+        text.textContent = item.text;
+        card.appendChild(icon);
+        card.appendChild(text);
+        bentoGrid.appendChild(card);
+      });
+    }
+
+    /* — Surprise subtitle — */
+    var surpriseSub = document.querySelector(".surprise-sub");
+    if (surpriseSub && SITE_CONFIG.surpriseSubtitle) {
+      surpriseSub.innerHTML = SITE_CONFIG.surpriseSubtitle.replace(/\n/g, "<br>");
+    }
+  }
+
+
+  /* ──────────────────────────────────────
+     2. SCROLL REVEAL
+     Runs after injection so dynamic
+     elements are already in the DOM
   ────────────────────────────────────── */
   var revealEls = document.querySelectorAll(".reveal");
 
@@ -30,7 +77,6 @@
       revealObserver.observe(el);
     });
   } else {
-    /* fallback for older browsers */
     revealEls.forEach(function (el) {
       el.classList.add("visible");
     });
@@ -38,8 +84,7 @@
 
 
   /* ──────────────────────────────────────
-     2. HERO SPARKLES
-     Tiny particles that drift upward
+     3. HERO SPARKLES
   ────────────────────────────────────── */
   var sparkleContainer = document.querySelector(".hero-sparkles");
 
@@ -49,69 +94,54 @@
     function makeSparkle() {
       var el = document.createElement("div");
       el.className = "sparkle";
-
       var size     = Math.random() * 3 + 1;
       var color    = SPARKLE_COLORS[Math.floor(Math.random() * SPARKLE_COLORS.length)];
       var duration = Math.random() * 7 + 5;
       var delay    = Math.random() * 4;
-
       el.style.cssText = [
-        "width:"             + size + "px",
-        "height:"            + size + "px",
-        "left:"              + (Math.random() * 100) + "%",
-        "top:"               + (Math.random() * 100) + "%",
-        "background:"        + color,
-        "animation-duration:"+ duration + "s",
-        "animation-delay:"   + delay + "s"
+        "width:"              + size + "px",
+        "height:"             + size + "px",
+        "left:"               + (Math.random() * 100) + "%",
+        "top:"                + (Math.random() * 100) + "%",
+        "background:"         + color,
+        "animation-duration:" + duration + "s",
+        "animation-delay:"    + delay + "s"
       ].join(";");
-
       sparkleContainer.appendChild(el);
-
-      /* remove after animation ends */
       var totalMs = (duration + delay) * 1000 + 500;
       setTimeout(function () {
-        if (el.parentNode) {
-          el.parentNode.removeChild(el);
-        }
+        if (el.parentNode) { el.parentNode.removeChild(el); }
       }, totalMs);
     }
 
-    /* seed initial batch */
     for (var i = 0; i < 22; i++) {
       setTimeout(makeSparkle, i * 250);
     }
-
-    /* keep generating continuously */
     setInterval(makeSparkle, 380);
   }
 
 
   /* ──────────────────────────────────────
-     3. MUSIC TOGGLE
+     4. MUSIC TOGGLE
   ────────────────────────────────────── */
-  var musicBtn  = document.getElementById("music-btn");
-  var bgAudio   = document.getElementById("bg-audio");
+  var musicBtn = document.getElementById("music-btn");
+  var bgAudio  = document.getElementById("bg-audio");
 
   if (musicBtn && bgAudio) {
     var isPlaying = false;
 
     function hasAudioSrc() {
-      var src = bgAudio.querySelector("source")
-        ? bgAudio.querySelector("source").getAttribute("src")
-        : "";
+      var sourceEl = bgAudio.querySelector("source");
+      var src = sourceEl ? sourceEl.getAttribute("src") : "";
       return !!(src && src.trim().length > 0);
     }
 
     musicBtn.addEventListener("click", function () {
       if (!hasAudioSrc()) {
-        /* no music uploaded yet — show subtle feedback */
         musicBtn.style.opacity = "0.4";
-        setTimeout(function () {
-          musicBtn.style.opacity = "";
-        }, 300);
+        setTimeout(function () { musicBtn.style.opacity = ""; }, 300);
         return;
       }
-
       if (isPlaying) {
         bgAudio.pause();
         musicBtn.innerHTML = "&#9834;";
@@ -122,9 +152,7 @@
           musicBtn.innerHTML = "&#9835;";
           musicBtn.classList.add("playing");
           isPlaying = true;
-        }).catch(function () {
-          /* autoplay blocked or file not found */
-        });
+        }).catch(function () {});
       }
     });
 
@@ -137,9 +165,7 @@
 
 
   /* ──────────────────────────────────────
-     4. SURPRISE OVERLAY
-     Button click → overlay fades in
-     + confetti starts
+     5. SURPRISE OVERLAY
   ────────────────────────────────────── */
   var surpriseBtn     = document.getElementById("surprise-btn");
   var surpriseOverlay = document.getElementById("surprise-overlay");
@@ -149,29 +175,19 @@
     if (!surpriseOverlay) { return; }
     surpriseOverlay.classList.add("active");
     document.body.style.overflow = "hidden";
-    if (typeof startConfetti === "function") {
-      startConfetti();
-    }
+    if (typeof startConfetti === "function") { startConfetti(); }
   }
 
   function closeSurprise() {
     if (!surpriseOverlay) { return; }
     surpriseOverlay.classList.remove("active");
     document.body.style.overflow = "";
-    if (typeof stopConfetti === "function") {
-      stopConfetti();
-    }
+    if (typeof stopConfetti === "function") { stopConfetti(); }
   }
 
-  if (surpriseBtn) {
-    surpriseBtn.addEventListener("click", openSurprise);
-  }
+  if (surpriseBtn) { surpriseBtn.addEventListener("click", openSurprise); }
+  if (surpriseClose) { surpriseClose.addEventListener("click", closeSurprise); }
 
-  if (surpriseClose) {
-    surpriseClose.addEventListener("click", closeSurprise);
-  }
-
-  /* Escape key closes overlay */
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && surpriseOverlay &&
         surpriseOverlay.classList.contains("active")) {
