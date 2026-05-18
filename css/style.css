@@ -37,6 +37,7 @@ body {
   font-weight: 300;
   overflow-x: hidden;
   line-height: 1.7;
+  overscroll-behavior-y: none; /* prevents pull-to-refresh accident */
 }
 
 img {
@@ -215,15 +216,8 @@ section {
   pointer-events: none;
 }
 
-.btn-glow:hover::after,
-.btn-glow:focus::after {
-  opacity: 1;
-}
-
-.btn-glow:hover,
+/* focus outline kept for keyboard accessibility outside hover:hover */
 .btn-glow:focus {
-  border-color: var(--pink);
-  box-shadow: 0 0 28px var(--glow-pink), 0 0 56px rgba(217, 167, 199, 0.1);
   outline: none;
 }
 
@@ -257,13 +251,11 @@ section {
   z-index: 0;
 }
 
-/* Watermark "18" behind everything */
+/* ── Hero "18" — soft glow bloom, heartbeat pulse ── */
 .hero-18 {
   font-family: 'Bodoni Moda', serif;
-  font-size: clamp(130px, 26vw, 240px);
+  font-size: clamp(130px, 26vw, 260px);
   font-weight: 300;
-  color: transparent;
-  -webkit-text-stroke: 2px rgba(217, 167, 199, 0.22);
   position: absolute;
   top: 50%;
   left: 50%;
@@ -273,12 +265,43 @@ section {
   white-space: nowrap;
   user-select: none;
   z-index: 0;
-  animation: heroNumFade 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  /* transparent fill — outline stroke only */
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(217, 167, 199, 0.12);
+  /* fade in on load */
   opacity: 0;
+  animation: hero18FadeIn 2.4s cubic-bezier(0.22, 1, 0.36, 1) 0.6s forwards;
 }
 
-@keyframes heroNumFade {
-  to { opacity: 1; }
+/* Bloom layer — full glow, opacity-only pulse (GPU accelerated, no repaint) */
+.hero-18::before {
+  content: '18';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* very faint pink fill so the shadow has something to bloom from */
+  color: rgba(217, 167, 199, 0.06);
+  -webkit-text-stroke: 0px transparent;
+  /* layered bloom: tight core → wide soft halo, pink → lavender (3 layers for perf) */
+  text-shadow:
+    0 0  22px rgba(217, 167, 199, 0.65),
+    0 0  70px rgba(217, 167, 199, 0.35),
+    0 0 160px rgba(191, 163, 255, 0.18);
+  /* only opacity animates — zero repaints */
+  opacity: 0.42;
+  animation: hero18Bloom 4.4s ease-in-out infinite;
+}
+
+@keyframes hero18FadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes hero18Bloom {
+  0%, 100% { opacity: 0.38; }
+  50%       { opacity: 0.85; }
 }
 
 .hero-content {
@@ -303,18 +326,21 @@ section {
 
 .hero-name {
   font-family: 'Bodoni Moda', serif;
-  font-size: clamp(58px, 15vw, 124px);
+  font-size: clamp(52px, 13vw, 124px);
   font-weight: 300;
-  line-height: 1;
+  line-height: 1.05;
   color: var(--text);
-  letter-spacing: -0.025em;
+  letter-spacing: 0.01em;
   margin-bottom: 28px;
-  font-feature-settings: "liga" 0, "calt" 0;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0, "dlig" 0, "hlig" 0;
 }
 
 .hero-name em {
   color: var(--pink);
   font-style: italic;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0, "dlig" 0, "hlig" 0;
 }
 
 .hero-sub {
@@ -432,14 +458,12 @@ section {
 
 .polaroid img {
   width: 100%;
-  height: auto;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  object-position: top center;
   border-radius: 1px;
   filter: brightness(0.94) saturate(0.88);
   transition: filter 0.4s ease;
-}
-
-.polaroid:hover img {
-  filter: brightness(1) saturate(1);
 }
 
 .polaroid-caption {
@@ -453,6 +477,60 @@ section {
   font-size: 13px;
   color: rgba(248, 233, 241, 0.4);
   letter-spacing: 0.05em;
+}
+
+/* ── Hover effects — mouse devices only, never sticks on touch ── */
+@media (hover: hover) {
+  .polaroid:hover img {
+    filter: brightness(1) saturate(1);
+  }
+
+  .polaroid-left:hover {
+    transform: rotate(-3deg) translateX(24px) translateY(-16px);
+    z-index: 10;
+    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.7),
+                0 0 50px rgba(217, 167, 199, 0.15);
+  }
+
+  .polaroid-center:hover {
+    transform: translateY(-34px) scale(1.02);
+    box-shadow: 0 44px 90px rgba(0, 0, 0, 0.7),
+                0 0 70px rgba(217, 167, 199, 0.18);
+  }
+
+  .polaroid-right:hover {
+    transform: rotate(3deg) translateX(-24px) translateY(-16px);
+    z-index: 10;
+    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.7),
+                0 0 50px rgba(217, 167, 199, 0.15);
+  }
+
+  .bento-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(217, 167, 199, 0.22);
+    box-shadow: 0 0 32px rgba(217, 167, 199, 0.07);
+  }
+
+  .btn-glow:hover::after,
+  .btn-glow:focus::after {
+    opacity: 1;
+  }
+
+  .btn-glow:hover,
+  .btn-glow:focus {
+    border-color: var(--pink);
+    box-shadow: 0 0 28px var(--glow-pink), 0 0 56px rgba(217, 167, 199, 0.1);
+    outline: none;
+  }
+
+  #music-btn:hover {
+    background: rgba(217, 167, 199, 0.08);
+    border-color: rgba(217, 167, 199, 0.4);
+  }
+
+  .surprise-close:hover {
+    color: rgba(248, 233, 241, 0.6);
+  }
 }
 
 /* individual positions */
@@ -475,27 +553,6 @@ section {
   transform: rotate(9deg) translateX(-24px);
   z-index: 1;
   transform-origin: bottom left;
-}
-
-/* hover lifts */
-.polaroid-left:hover {
-  transform: rotate(-3deg) translateX(24px) translateY(-16px);
-  z-index: 10;
-  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.7),
-              0 0 50px rgba(217, 167, 199, 0.15);
-}
-
-.polaroid-center:hover {
-  transform: translateY(-34px) scale(1.02);
-  box-shadow: 0 44px 90px rgba(0, 0, 0, 0.7),
-              0 0 70px rgba(217, 167, 199, 0.18);
-}
-
-.polaroid-right:hover {
-  transform: rotate(3deg) translateX(-24px) translateY(-16px);
-  z-index: 10;
-  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.7),
-              0 0 50px rgba(217, 167, 199, 0.15);
 }
 
 /* ══════════════════════════════════════
@@ -522,12 +579,6 @@ section {
               box-shadow 0.35s ease,
               border-color 0.35s ease;
   cursor: default;
-}
-
-.bento-card:hover {
-  transform: translateY(-5px);
-  border-color: rgba(217, 167, 199, 0.22);
-  box-shadow: 0 0 32px rgba(217, 167, 199, 0.07);
 }
 
 /* Bento layout — asymmetric */
@@ -749,10 +800,6 @@ section {
   padding: 8px 16px;
 }
 
-.surprise-close:hover {
-  color: rgba(248, 233, 241, 0.6);
-}
-
 /* ══════════════════════════════════════
    MUSIC BUTTON (fixed)
    ══════════════════════════════════════ */
@@ -776,11 +823,6 @@ section {
   line-height: 1;
   transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   color: var(--text-muted);
-}
-
-#music-btn:hover {
-  background: rgba(217, 167, 199, 0.08);
-  border-color: rgba(217, 167, 199, 0.4);
 }
 
 #music-btn.playing {
@@ -825,104 +867,103 @@ footer {
 }
 
 /* ══════════════════════════════════════
-   RESPONSIVE — TABLET
+   RESPONSIVE — WIDE DESKTOP (1200px+)
+   ══════════════════════════════════════ */
+@media (min-width: 1200px) {
+  .polaroid         { width: 240px; }
+  .polaroid-center  { width: 290px; }
+  .polaroid-trio    { max-width: 860px; }
+}
+
+/* ══════════════════════════════════════
+   RESPONSIVE — LAPTOP / TABLET LAND
+   860px – 1199px
+   ══════════════════════════════════════ */
+@media (max-width: 1199px) and (min-width: 861px) {
+  .polaroid         { width: 200px; }
+  .polaroid-center  { width: 240px; }
+}
+
+/* ══════════════════════════════════════
+   RESPONSIVE — TABLET PORTRAIT
+   641px – 860px
    ══════════════════════════════════════ */
 @media (max-width: 860px) {
-  .bento-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  /* bento — 2 col */
+  .bento-grid { grid-template-columns: repeat(2, 1fr); }
+  .bento-card:nth-child(n)  { grid-column: span 1; }
+  .bento-card:nth-child(1)  { grid-column: span 2; }
+  .bento-card:nth-child(4)  { grid-column: span 2; }
 
-  .bento-card:nth-child(n) {
-    grid-column: span 1;
-  }
-
-  .bento-card:nth-child(1) { grid-column: span 2; }
-  .bento-card:nth-child(4) { grid-column: span 2; }
-
-  .polaroid { width: 180px; }
-  .polaroid-center { width: 220px; }
+  /* polaroids — shrink a bit but keep row */
+  .polaroid         { width: 165px; }
+  .polaroid-center  { width: 200px; }
 }
 
 /* ══════════════════════════════════════
    RESPONSIVE — MOBILE
+   max 640px
    ══════════════════════════════════════ */
 @media (max-width: 640px) {
   section { padding: 80px 20px; }
 
-  .glass-card { padding: 28px 22px; }
+  .glass-card {
+    padding: 28px 22px;
+  }
 
   .letter-card {
     padding: 40px 26px;
     border-radius: 20px;
   }
 
-  /* Polaroids — horizontal row on mobile with scroll */
+  /* ── Polaroid trio: horizontal scroll ── */
   .polaroid-trio {
     flex-direction: row;
     align-items: flex-end;
     justify-content: flex-start;
-    gap: 12px;
+    gap: 14px;
+    max-width: 100%;
     margin-top: 40px;
     overflow-x: auto;
-    padding: 16px 20px 48px;
+    overflow-y: visible;
+    padding: 20px 28px 56px;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    /* keep tilts from getting clipped */
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 
   .polaroid-trio::-webkit-scrollbar { display: none; }
 
-  .polaroid-left,
-  .polaroid-right {
-    width: 130px;
+  .polaroid {
     flex-shrink: 0;
+    width: 140px;
   }
 
   .polaroid-center {
-    width: 150px;
     flex-shrink: 0;
+    width: 160px;
   }
 
-  .polaroid-left  { transform: rotate(-6deg); }
-  .polaroid-center { transform: translateY(-12px); }
-  .polaroid-right { transform: rotate(6deg); }
+  .polaroid-left   { transform: rotate(-7deg); transform-origin: bottom right; }
+  .polaroid-center { transform: translateY(-14px); transform-origin: bottom center; }
+  .polaroid-right  { transform: rotate(7deg); transform-origin: bottom left; }
 
-  .polaroid-left:hover  { transform: rotate(-2deg) translateY(-10px); }
-  .polaroid-center:hover { transform: translateY(-22px); }
-  .polaroid-right:hover { transform: rotate(2deg) translateY(-10px); }
+  /* ── Bento: single column ── */
+  .bento-grid { grid-template-columns: 1fr; gap: 12px; }
+  .bento-card:nth-child(n) { grid-column: span 1; }
 
-  /* Bento single column on mobile */
-  .bento-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .bento-card:nth-child(n) {
-    grid-column: span 1;
-  }
-
-  .hero-18 {
-    font-size: clamp(110px, 42vw, 160px);
-  }
-
-  #music-btn {
-    top: 14px;
-    right: 14px;
-    width: 38px;
-    height: 38px;
-  }
-
-  .btn-glow {
-    padding: 14px 36px;
-  }
+  #music-btn { top: 14px; right: 14px; width: 38px; height: 38px; }
+  .btn-glow  { padding: 14px 36px; }
 }
 
+/* ══════════════════════════════════════
+   RESPONSIVE — SMALL PHONE
+   max 380px
+   ══════════════════════════════════════ */
 @media (max-width: 380px) {
-  .polaroid-left,
-  .polaroid-right {
-    width: 110px;
-  }
-
-  .polaroid-center {
-    width: 128px;
-  }
+  .polaroid        { width: 118px; }
+  .polaroid-center { width: 136px; }
 }
+

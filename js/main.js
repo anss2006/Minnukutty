@@ -90,6 +90,8 @@
 
   if (sparkleContainer) {
     var SPARKLE_COLORS = ["#D9A7C7", "#BFA3FF", "#FFF4D6", "#F8E9F1", "#ffffff"];
+    var sparkleInterval = null;
+    var heroVisible = true;
 
     function makeSparkle() {
       var el = document.createElement("div");
@@ -114,10 +116,40 @@
       }, totalMs);
     }
 
+    /* seed initial burst */
     for (var i = 0; i < 22; i++) {
       setTimeout(makeSparkle, i * 250);
     }
-    setInterval(makeSparkle, 380);
+
+    /* start interval */
+    sparkleInterval = setInterval(makeSparkle, 380);
+
+    /* pause/resume based on hero visibility — saves battery when scrolled away */
+    if ("IntersectionObserver" in window) {
+      var heroSection = document.getElementById("hero");
+      if (heroSection) {
+        var sparkleObserver = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (entry) {
+              if (entry.isIntersecting) {
+                /* hero visible — resume */
+                if (!sparkleInterval) {
+                  sparkleInterval = setInterval(makeSparkle, 380);
+                }
+              } else {
+                /* hero off-screen — pause and clear */
+                if (sparkleInterval) {
+                  clearInterval(sparkleInterval);
+                  sparkleInterval = null;
+                }
+              }
+            });
+          },
+          { threshold: 0.05 }
+        );
+        sparkleObserver.observe(heroSection);
+      }
+    }
   }
 
 

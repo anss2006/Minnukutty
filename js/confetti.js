@@ -9,6 +9,7 @@ var confettiCtx = null;
 var confettiPieces = [];
 var confettiRunning = false;
 var confettiFrame = null;
+var confettiLastWidth = 0; /* track width to ignore height-only resize (mobile scroll bar) */
 
 var CONFETTI_COLORS = [
   "#D9A7C7",   /* pink */
@@ -27,6 +28,7 @@ function startConfetti() {
   confettiRunning = true;
 
   resizeConfettiCanvas();
+  confettiLastWidth = window.innerWidth;
   window.addEventListener("resize", resizeConfettiCanvas);
 
   var count = 110;
@@ -39,7 +41,12 @@ function startConfetti() {
 
 function resizeConfettiCanvas() {
   if (!confettiCanvas) { return; }
-  confettiCanvas.width = window.innerWidth;
+  /* Only resize when width changes — ignores mobile address-bar
+     hide/show which only changes height and causes stutter */
+  var currentWidth = window.innerWidth;
+  if (currentWidth === confettiLastWidth && confettiLastWidth !== 0) { return; }
+  confettiLastWidth = currentWidth;
+  confettiCanvas.width  = window.innerWidth;
   confettiCanvas.height = window.innerHeight;
 }
 
